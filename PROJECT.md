@@ -18,14 +18,21 @@
 | 音效 | `NSSound`（重点做**结束**音效） |
 | 通知 | `UserNotifications` |
 | 存储 | `UserDefaults`（仅存 今日计数 + 日期 + 四项配置） |
-| 分发 | A 档裸发：GitHub Releases 挂 DMG（`create-dmg`）+ Homebrew Cask；首次右键"打开"绕 Gatekeeper；不公证、¥0 |
-| 预期内存 | ~30MB 常驻 |
+| 分发 | A 档裸发：GitHub Releases 挂 DMG（`hdiutil`，含 `/Applications` 软链拖拽安装）+ Homebrew Cask；首次右键"打开"绕 Gatekeeper；不公证、¥0 |
+| 预期内存 | ~30MB 常驻（实测 `phys_footprint` ≈ 15MB） |
 
 **选型理由留档**：
 - 分发签名的麻烦程度与语言无关，只取决于"是否公证"，Swift 与 Electron 同一道坎。
 - 运行内存是明确在意的指标：Swift 原生 ~30MB，Electron ~150–300MB，原生完胜。
 - Q1 要求的"居中、置顶、不抢焦点"浮窗是 `NSPanel` 的看家本领，Electron 需 hack。
 - Mac-only + 自用起家，Electron/Tauri 的跨平台优势无价值。
+
+## 二·补·构建与工程（锁定）
+
+- **工程形态**：Swift Package Manager（`Package.swift`），非 Xcode `.xcodeproj`。原因：目标机仅装 Command Line Tools（无完整 Xcode），SwiftPM 可在此环境完成构建，且更轻、无 IDE 工程文件负担。
+- **目标划分**：`RecessCore`（纯逻辑库，计时引擎，可测）/ `Recess`（SwiftUI 可执行）/ `RecessTests`（可执行断言测试）。
+- **测试**：因 Command Line Tools 不含 XCTest，改用**无框架断言测试**：`swift run RecessTests` 跑引擎逻辑（39 项），`Recess --selftest` 跑 GUI 层无界面自检（24 项，断言休息浮窗居中/置顶/不抢焦点、结束音效 `play()` 实际启动、工作完成→弹窗事件接线、菜单栏标签逐态图标与文本、各事件通知文案）。退出码即结果，二者均为 `build_app.sh` 的打包门禁。仅"通知横幅是否真实弹出"依赖人工肉眼确认。
+- **打包**：`scripts/build_app.sh` 用 SwiftPM 产物手工装配 `Recess.app`（写入 `Info.plist`、`LSUIElement=true`、ad-hoc 签名）；`scripts/build_dmg.sh` 用 `hdiutil` 生成压缩 DMG。均不依赖 Xcode/`create-dmg`。
 
 ## 三、计时引擎（锁定）
 
