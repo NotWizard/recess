@@ -1,7 +1,7 @@
 import SwiftUI
 import RecessCore
 
-/// 菜单栏下拉内容：状态、今日数、循环进度，以及工作/休息控制入口。
+/// 菜单栏下拉内容：状态、居中圆形主按钮(带进度环)、今日番茄，设置/退出同行平铺。
 struct MenuContentView: View {
     @ObservedObject var controller: AppController
     @ObservedObject var engine: RecessEngine
@@ -11,44 +11,132 @@ struct MenuContentView: View {
         self.engine = controller.engine
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(statusLine).font(.headline)
-            Text("今日番茄：\(engine.todayCount)")
-            Text("本轮进度：\(engine.completedWorkSegments)/\(engine.config.longBreakEvery)")
-
-            Divider()
-
-            switch engine.phase {
-            case .idle:
-                if engine.pendingRest != nil {
-                    Button("开始休息") { controller.presentRestWindow() }
-                    Button("跳过休息") { controller.skipBreak() }
-                } else {
-                    Button("开始工作") { controller.startWork() }
-                }
-            case .working:
-                Text("剩余 \(timeString(engine.remainingSeconds))")
-                Button("结束") { controller.endWork() }
-            case .shortBreak, .longBreak:
-                Text("休息中 \(timeString(engine.remainingSeconds))")
-                Button("回到休息浮窗") { controller.presentRestWindow() }
-            }
-
-            Divider()
-            Button("设置…") { controller.openSettings() }
-            Button("退出 Recess") { controller.quit() }
-        }
-        .padding(10)
-        .frame(width: 220)
+    private var action: MenuUI.PrimaryAction {
+        MenuUI.primaryAction(phase: engine.phase, pendingRest: engine.pendingRest)
     }
 
-    private var statusLine: String {
-        switch engine.phase {
-        case .idle: return engine.pendingRest != nil ? "待休息" : "空闲"
-        case .working: return "工作中"
-        case .shortBreak: return "短休中"
-        case .longBreak: return "长休中"
+    var body: some View {
+        VStack(spacing: 14) {
+            Text(MenuUI.statusText(phase: engine.phase, pendingRest: engine.pendingRest))
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            ProgressRing(
+                symbol: MenuUI.primarySymbol(action),
+                progress: MenuUI.ringProgress(phase: engine.phase,
+                                              remaining: engine.remainingSeconds,
+                                              total: engine.currentTotalSeconds),
+                countdown: MenuUI.showsCountdown(phase: engine.phase)
+                    ? MenuUI.barCountdown(engine.remainingSeconds) : nil,
+                tint: ringTint
+            )
+
+            PrimaryActionButton(
+                title: MenuUI.primaryTitle(action),
+                kind: MenuUI.buttonKind(action)
+            ) {
+                perform(action)
+            }
+
+            Text("今日番茄 · \(engine.todayCount)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 10) {
+                Button("设置") { controller.openSettings() }
+                    .frame(maxWidth: .infinity)
+                Button("退出") { controller.quit() }
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .padding(.top, 4)
+        }
+        .padding(16)
+        .frame(width: 240)
+    }
+
+    private var ringTint: Color {
+        switch MenuUI.phaseTint(phase: engine.phase) {
+        case .none: return .secondary
+        case .work: return .orange
+        case .rest: return .green
+        }
+    }
+
+    private func perform(_ action: MenuUI.PrimaryAction) {
+        switch action {
+        case .startWork:  controller.startWork()
+        case .endWork:    controller.endWork()
+        case .startBreak: controller.presentRestWindow()
+        case .skipBreak:  controller.skipBreak()
+        }
+        // 收起面板：图标宽度随状态变化会导致 popover 箭头错位，点完即关最稳且交互自然。
+        controller.dismissPopover?()
+    }
+}
+
+/// 纯展示进度环：外圈进度 + 中心倒计时/图标。不可点，仅显示。
+struct ProgressRing: View {
+    let symbol: String
+    let progress: Double
+    let countdown: String?
+    let tint: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.secondary.opacity(0.18), lineWidth: 8)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(.easeInOut(duration: 0.25), value: progress)
+            if let countdown {
+                Text(countdown).font(.system(size: 28, weight: .bold)).monospacedDigit()
+            } else {
+                Image(systemName: symbol)
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+        }
+        .frame(width: 120, height: 120)
+    }
+}
+
+/// 主按钮：go=开始类(蓝底白字)，stop=结束/跳过类(蓝字白底蓝边框)，二者正反呼应。
+struct PrimaryActionButton: View {
+    let title: String
+    let kind: MenuUI.ButtonKind
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.title3).bold()
+                .foregroundStyle(kind == .go ? Color.white : Color.accentColor)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(fillShape)
+                .overlay(borderShape)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
+
+    @ViewBuilder private var fillShape: some View {
+        if kind == .go {
+            shape.fill(Color.accentColor)
+        } else {
+            shape.fill(Color(nsColor: .controlBackgroundColor))
+        }
+    }
+
+    @ViewBuilder private var borderShape: some View {
+        if kind == .stop {
+            // strokeBorder 向内描边，四边都完整落在视图内，避免底边被裁细。
+            shape.strokeBorder(Color.accentColor, lineWidth: 1.5)
         }
     }
 }

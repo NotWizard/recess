@@ -19,6 +19,9 @@ final class AppController: ObservableObject {
     }
     var endSoundForTesting: NSSound? { endSound }
 
+    /// 由 StatusItemController 注入：请求收起菜单栏 popover（打开设置窗前调用）。
+    var dismissPopover: (() -> Void)?
+
     init(engine: RecessEngine = RecessEngine()) {
         self.engine = engine
         engine.onEvent = { [weak self] event in self?.handle(event) }
@@ -61,6 +64,7 @@ final class AppController: ObservableObject {
     // MARK: 设置
 
     func openSettings() {
+        dismissPopover?()
         if settingsWindow == nil {
             let hosting = NSHostingController(rootView: SettingsContentView(controller: self))
             let window = NSWindow(contentViewController: hosting)

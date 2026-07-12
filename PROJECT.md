@@ -13,7 +13,7 @@
 | 层 | 选型 |
 |----|------|
 | 语言/UI | Swift + SwiftUI 原生 |
-| 菜单栏 | `MenuBarExtra` |
+| 菜单栏 | `NSStatusItem` 自绘（空闲=模板图标；进行中=橙/绿胶囊倒计时图片）+ `NSPopover` 承载下拉面板 |
 | 居中置顶浮窗 | `NSPanel`（置顶 + 不抢当前应用焦点） |
 | 音效 | `NSSound`（重点做**结束**音效） |
 | 通知 | `UserNotifications` |
@@ -26,12 +26,13 @@
 - 运行内存是明确在意的指标：Swift 原生 ~30MB，Electron ~150–300MB，原生完胜。
 - Q1 要求的"居中、置顶、不抢焦点"浮窗是 `NSPanel` 的看家本领，Electron 需 hack。
 - Mac-only + 自用起家，Electron/Tauri 的跨平台优势无价值。
+- 菜单栏弃用 `MenuBarExtra` 改 `NSStatusItem`：`MenuBarExtra` 的 label 背景会被系统忽略（只渲染模板文字/图标），无法给"进行中"的倒计时上橙/绿底色；`NSStatusItem` 可把带底色胶囊的倒计时自绘成 `NSImage` 贴图，满足"一眼区分工作/休息"的诉求。
 
 ## 二·补·构建与工程（锁定）
 
 - **工程形态**：Swift Package Manager（`Package.swift`），非 Xcode `.xcodeproj`。原因：目标机仅装 Command Line Tools（无完整 Xcode），SwiftPM 可在此环境完成构建，且更轻、无 IDE 工程文件负担。
 - **目标划分**：`RecessCore`（纯逻辑库，计时引擎，可测）/ `Recess`（SwiftUI 可执行）/ `RecessTests`（可执行断言测试）。
-- **测试**：因 Command Line Tools 不含 XCTest，改用**无框架断言测试**：`swift run RecessTests` 跑引擎逻辑（39 项），`Recess --selftest` 跑 GUI 层无界面自检（24 项，断言休息浮窗居中/置顶/不抢焦点、结束音效 `play()` 实际启动、工作完成→弹窗事件接线、菜单栏标签逐态图标与文本、各事件通知文案）。退出码即结果，二者均为 `build_app.sh` 的打包门禁。仅"通知横幅是否真实弹出"依赖人工肉眼确认。
+- **测试**：因 Command Line Tools 不含 XCTest，改用**无框架断言测试**：`swift run RecessTests` 跑引擎逻辑（39 项），`Recess --selftest` 跑 GUI 层无界面自检（42 项，断言休息浮窗居中/置顶/不抢焦点、结束音效 `play()` 实际启动、工作完成→弹窗事件接线、菜单栏图标/倒计时逻辑、主按钮动作与视觉类型、阶段配色、进度环、各事件通知文案）。退出码即结果，二者均为 `build_app.sh` 的打包门禁。仅"通知横幅是否真实弹出、菜单栏底色渲染"依赖人工肉眼确认。
 - **打包**：`scripts/build_app.sh` 用 SwiftPM 产物手工装配 `Recess.app`（写入 `Info.plist`、`LSUIElement=true`、ad-hoc 签名）；`scripts/build_dmg.sh` 用 `hdiutil` 生成压缩 DMG。均不依赖 Xcode/`create-dmg`。
 
 ## 三、计时引擎（锁定）
@@ -49,8 +50,8 @@
 
 ## 五、交互（锁定）
 
-- **菜单栏图标**：显示状态 + 循环进度（如 3/4）+ 今日数；点击展开控制。
-- **工作浮窗控制**：`开始` / `结束`。
+- **菜单栏图标**：空闲=纯图标；进行中=倒计时 `MM:SS`，工作橙色胶囊底、休息绿色胶囊底，一眼区分工作/休息。点击弹出 `NSPopover` 面板。
+- **下拉面板**：顶部状态文字 → 居中进度环（纯展示，随倒计时收缩，工作橙/休息绿）→ 主按钮（开始类=蓝底白字；结束/跳过类=白底蓝字蓝边框，二者正反呼应）→ 今日番茄数 → 底部「设置 / 退出」同行平铺。点主按钮后面板即收起（避免图标宽度变化导致 popover 箭头错位）。不显示本轮进度。
 - **休息浮窗**：居中、置顶、不抢焦点；按钮 `开始休息` / `跳过`；可直接关闭；关闭后菜单栏图标保留入口，可再次激活休息。
 - **设置页**：四个时长配置项（工作 / 短休 / 长休 / 每几个后长休）。
 

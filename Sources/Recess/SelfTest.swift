@@ -68,15 +68,41 @@ enum SelfTest {
         controller.presentRestWindow()
         check(wc.isVisible, "关闭后应能再次激活浮窗")
 
-        // 5) 菜单栏标签内容逻辑（图标 + "进度·今日数"），逐态断言。
-        check(MenuBarLabel.symbol(phase: .idle, pendingRest: nil) == "timer", "空闲图标应为 timer")
-        check(MenuBarLabel.symbol(phase: .idle, pendingRest: .short) == "cup.and.saucer", "待休息图标应为 cup")
-        check(MenuBarLabel.symbol(phase: .working, pendingRest: nil) == "timer.circle.fill", "工作图标")
-        check(MenuBarLabel.symbol(phase: .shortBreak, pendingRest: nil) == "cup.and.saucer", "短休图标")
-        check(MenuBarLabel.symbol(phase: .longBreak, pendingRest: nil) == "figure.walk", "长休图标")
-        check(MenuBarLabel.text(completed: 3, every: 4, today: 5) == "3/4·5", "标签文本应为 3/4·5")
+        // 5) 菜单栏显示逻辑：空闲显示图标、进行中显示倒计时。
+        check(!MenuUI.showsCountdown(phase: .idle), "空闲不显示倒计时")
+        check(MenuUI.showsCountdown(phase: .working), "工作中显示倒计时")
+        check(MenuUI.showsCountdown(phase: .shortBreak), "休息中显示倒计时")
+        check(MenuUI.barSymbol(phase: .idle, pendingRest: nil) == "timer", "空闲菜单栏图标")
+        check(MenuUI.barSymbol(phase: .idle, pendingRest: .short) == "cup.and.saucer.fill", "待休息菜单栏图标")
+        check(MenuUI.barCountdown(1500) == "25:00", "倒计时 25:00")
+        check(MenuUI.barCountdown(65) == "01:05", "倒计时 01:05")
 
-        // 6) 通知文案（各事件），单一真相函数逐项断言。
+        // 6) 主按钮动作/文案：逐态。
+        check(MenuUI.primaryAction(phase: .idle, pendingRest: nil) == .startWork, "空闲=开始工作")
+        check(MenuUI.primaryAction(phase: .idle, pendingRest: .short) == .startBreak, "待休息=开始休息")
+        check(MenuUI.primaryAction(phase: .working, pendingRest: nil) == .endWork, "工作中=结束")
+        check(MenuUI.primaryAction(phase: .shortBreak, pendingRest: nil) == .skipBreak, "短休中=跳过")
+        check(MenuUI.primaryTitle(.startWork) == "开始工作", "文案 开始工作")
+        check(MenuUI.primaryTitle(.skipBreak) == "跳过", "文案 跳过")
+
+        // 主按钮视觉类型：开始类=go，结束/跳过=stop。
+        check(MenuUI.buttonKind(.startWork) == .go, "开始工作=go")
+        check(MenuUI.buttonKind(.startBreak) == .go, "开始休息=go")
+        check(MenuUI.buttonKind(.endWork) == .stop, "结束=stop")
+        check(MenuUI.buttonKind(.skipBreak) == .stop, "跳过=stop")
+
+        // 阶段配色：空闲无底色、工作暖色、休息绿色。
+        check(MenuUI.phaseTint(phase: .idle) == MenuUI.PhaseTint.none, "空闲无底色")
+        check(MenuUI.phaseTint(phase: .working) == .work, "工作=暖色")
+        check(MenuUI.phaseTint(phase: .shortBreak) == .rest, "短休=绿色")
+        check(MenuUI.phaseTint(phase: .longBreak) == .rest, "长休=绿色")
+
+        // 7) 进度环：空闲为 0；进行中按已过比例。
+        check(MenuUI.ringProgress(phase: .idle, remaining: 0, total: 0) == 0, "空闲进度环 0")
+        check(abs(MenuUI.ringProgress(phase: .working, remaining: 750, total: 1500) - 0.5) < 0.001, "半程进度 0.5")
+        check(MenuUI.ringProgress(phase: .working, remaining: 0, total: 1500) == 1.0, "结束进度 1.0")
+
+        // 8) 通知文案（各事件），单一真相函数逐项断言。
         let nShort = AppController.notificationContent(for: .workCompleted(.short))
         check(nShort.title == "工作段完成" && nShort.body.contains("短休息"), "短休完成通知文案")
         let nLong = AppController.notificationContent(for: .workCompleted(.long))
