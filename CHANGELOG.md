@@ -22,3 +22,4 @@
 ### 修复
 - 休息浮窗尺寸被压成竖条、文字截断：为内容设固定 360×200 尺寸并 `setContentSize`，避免 `NSHostingController` 按 fitting size 反向压缩窗口。
 - 休息浮窗按钮主次不分、`开始休息` 在非活动窗口下被渲染成灰色：改用显式填充的自定义按钮样式（主=蓝底白字、次=浅灰），不再依赖系统 `borderedProminent` 的活动态；窗口标题改为 `Recess`、正文大标题保留 `该休息了`。同步更新 `PROJECT.md` 第五节。
+- `Info.plist` 补充 `NSUserNotificationsUsageDescription`（通知用途说明），使打包后首次请求通知权限时展示清晰用途文案，更规范。

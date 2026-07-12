@@ -20,6 +20,8 @@
     <string>13.0</string>
     <key>LSUIElement</key>
     <true/>
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>Recess 在工作段或休息结束时发送提醒通知，助你到点起身、放松腰部。</string>
     <key>NSHumanReadableCopyright</key>
     <string>Recess</string>
 </dict>
