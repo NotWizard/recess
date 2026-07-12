@@ -91,7 +91,7 @@ struct RestContentView: View {
     }
 }
 
-/// 设置页：四个时长配置项。
+/// 设置页：四项时长配置。分组表单 + 可键入输入框（右侧保留微调步进器）。
 struct SettingsContentView: View {
     @ObservedObject var engine: RecessEngine
     let controller: AppController
@@ -112,24 +112,55 @@ struct SettingsContentView: View {
     }
 
     var body: some View {
-        Form {
-            Stepper("工作时长：\(work) 分钟", value: $work, in: 1...180)
-            Stepper("短休时长：\(short) 分钟", value: $short, in: 1...120)
-            Stepper("长休时长：\(long) 分钟", value: $long, in: 1...120)
-            Stepper("每几个工作段后长休：\(every)", value: $every, in: 1...12)
+        VStack(spacing: 0) {
+            Form {
+                Section("番茄时长") {
+                    field("工作时长", value: $work, range: 1...180, unit: "分钟")
+                    field("短休时长", value: $short, range: 1...120, unit: "分钟")
+                    field("长休时长", value: $long, range: 1...120, unit: "分钟")
+                }
+                Section("长休节奏") {
+                    field("每几个工作段后长休", value: $every, range: 1...12, unit: "个")
+                }
+            }
+            .formStyle(.grouped)
+
+            Divider()
             HStack {
                 Spacer()
-                Button("保存") {
-                    controller.engine.updateConfig(
-                        RecessConfig(workMinutes: work, shortBreakMinutes: short,
-                                     longBreakMinutes: long, longBreakEvery: every)
-                    )
-                }
-                .keyboardShortcut(.defaultAction)
+                Button("保存") { save() }
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding(12)
+        }
+        .frame(width: 360, height: 400)
+    }
+
+    /// 一行：左标签 + 右对齐可键入输入框 + 单位 + 微调步进器。
+    private func field(_ label: String, value: Binding<Int>,
+                       range: ClosedRange<Int>, unit: String) -> some View {
+        LabeledContent(label) {
+            HStack(spacing: 6) {
+                TextField("", value: value, format: .number)
+                    .labelsHidden()
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 52)
+                    .textFieldStyle(.roundedBorder)
+                Text(unit).foregroundStyle(.secondary)
+                Stepper("", value: value, in: range).labelsHidden()
             }
         }
-        .padding(20)
-        .frame(width: 300)
+    }
+
+    private func save() {
+        controller.engine.updateConfig(
+            RecessConfig(workMinutes: work, shortBreakMinutes: short,
+                         longBreakMinutes: long, longBreakEvery: every)
+        )
+        // 键入值可能越界；引擎已钳制，回读令输入框与实际生效值一致。
+        let c = engine.config
+        work = c.workMinutes; short = c.shortBreakMinutes
+        long = c.longBreakMinutes; every = c.longBreakEvery
     }
 }
 
