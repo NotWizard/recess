@@ -53,6 +53,7 @@ final class AppController: ObservableObject {
     func startBreak() {
         engine.startPendingBreak()
         syncTimer()
+        restWC?.close()
     }
 
     func skipBreak() {

@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-12
+
+### 修复
+- 点「开始休息」后休息浮窗未自动关闭：`AppController.startBreak()` 补 `restWC?.close()`，使开始休息与跳过一致地关窗；GUI 自检增补对应断言。
+
+## [0.1.0] - 2026-07-12
+
 ### 新增
 - 新增面向用户的 `README.md`：项目定位、安装方式（DMG / Homebrew / 源码构建）、使用指南、设计取舍与「明确不做」清单、开发说明，配套 App 图标。
 - 实现 Recess 完整功能：菜单栏 App（`NSStatusItem` 自绘：空闲显图标、进行中显倒计时并按工作/休息上橙/绿胶囊底色；`NSPopover` 承载下拉面板）、四态计时引擎（空闲/工作中/短休中/长休中，无暂停）、居中置顶不抢焦点休息浮窗（`NSPanel`，开始休息/跳过，可关闭并再激活）、结束音效（`NSSound`）、系统通知（`UserNotifications`）、四项时长设置页。
@@ -24,3 +31,4 @@
 - 休息浮窗尺寸被压成竖条、文字截断：为内容设固定 360×200 尺寸并 `setContentSize`，避免 `NSHostingController` 按 fitting size 反向压缩窗口。
 - 休息浮窗按钮主次不分、`开始休息` 在非活动窗口下被渲染成灰色：改用显式填充的自定义按钮样式（主=蓝底白字、次=浅灰），不再依赖系统 `borderedProminent` 的活动态；窗口标题改为 `Recess`、正文大标题保留 `该休息了`。同步更新 `PROJECT.md` 第五节。
 - `Info.plist` 补充 `NSUserNotificationsUsageDescription`（通知用途说明），使打包后首次请求通知权限时展示清晰用途文案，更规范。
+- 点「开始休息」后休息浮窗未自动关闭：`AppController.startBreak()` 补 `restWC?.close()`，使开始休息与跳过一致地关窗；GUI 自检增补对应断言。

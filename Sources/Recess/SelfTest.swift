@@ -60,9 +60,12 @@ enum SelfTest {
         check(engine.pendingRest == .short, "应待短休")
         check(wc.isVisible, "工作完成后休息浮窗应可见")
 
-        // 4) 开始休息 -> 短休；跳过 -> 浮窗隐藏；可再激活。
+        // 4) 开始休息 -> 短休且浮窗自动关闭；再激活 -> 跳过 -> 浮窗隐藏；可再激活。
         controller.startBreak()
         check(engine.phase == .shortBreak, "开始休息后应为短休中")
+        check(!wc.isVisible, "开始休息后浮窗应自动隐藏")
+        controller.presentRestWindow()
+        check(wc.isVisible, "可再次激活浮窗")
         controller.skipBreak()
         check(!wc.isVisible, "跳过后浮窗应隐藏")
         controller.presentRestWindow()
