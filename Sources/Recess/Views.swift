@@ -154,15 +154,20 @@ struct RestContentView: View {
     var body: some View {
         VStack(spacing: 16) {
             Text(title).font(.title2).bold()
-            Text(subtitle).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Text(subtitle)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 12) {
-                Button("开始休息") { controller.startBreak() }
-                    .keyboardShortcut(.defaultAction)
                 Button("跳过") { controller.skipBreak() }
+                    .buttonStyle(RestButtonStyle(prominent: false))
+                Button("开始休息") { controller.startBreak() }
+                    .buttonStyle(RestButtonStyle(prominent: true))
+                    .keyboardShortcut(.defaultAction)
             }
         }
         .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(width: 360, height: 200)
     }
 
     private var isLong: Bool {
@@ -176,6 +181,28 @@ struct RestContentView: View {
             return "剩余 \(timeString(engine.remainingSeconds))，起来走走、放松腰部。"
         }
         return isLong ? "完成一轮，来个长休息，离开座位活动一下。" : "起身活动一下，放松腰部。"
+    }
+}
+
+/// 休息浮窗按钮样式：主=蓝底白字(显式填充，不受非活动窗口影响)，次=低调描边。按下轻微变暗。
+struct RestButtonStyle: ButtonStyle {
+    let prominent: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        return configuration.label
+            .font(.body).bold()
+            .foregroundStyle(prominent ? Color.white : Color.primary)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 20)
+            .background {
+                if prominent {
+                    shape.fill(Color.accentColor)
+                } else {
+                    shape.fill(Color.secondary.opacity(0.18))
+                }
+            }
+            .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }
 

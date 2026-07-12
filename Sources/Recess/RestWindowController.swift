@@ -39,16 +39,18 @@ final class RestWindowController {
             backing: .buffered,
             defer: false
         )
-        panel.title = "该休息了"
+        panel.title = "Recess"
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.hidesOnDeactivate = false
         panel.becomesKeyOnlyIfNeeded = true       // 仅在确需输入时成为 key，平时不抢焦点。
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
-        panel.contentViewController = NSHostingController(
-            rootView: RestContentView(controller: controller)
-        )
+        let host = NSHostingController(rootView: RestContentView(controller: controller))
+        panel.contentViewController = host
+        // 固定内容尺寸，避免 NSHostingController 按 fitting size 把窗口压成竖条。
+        panel.setContentSize(NSSize(width: 360, height: 200))
+        panel.contentMinSize = NSSize(width: 360, height: 200)
         self.panel = panel
     }
 

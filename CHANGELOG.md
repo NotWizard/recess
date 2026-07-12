@@ -18,3 +18,7 @@
 - 重做设置页交互（`SettingsContentView`）：由清一色 `Stepper` 改为分组表单（`Form` + `.formStyle(.grouped)`），分「番茄时长 / 长休节奏」两组；每项时长改为可直接键入的输入框 + 单位后缀 + 右侧微调步进器；保存时回读引擎钳制后的值，令输入框与实际生效值一致。四项配置与保存语义不变。
 - `PROJECT.md` 记录构建工程实况：采用 Swift Package Manager（非 Xcode 工程），因目标机仅装 Command Line Tools；测试改用无框架断言（XCTest 未随 CLT 分发）；DMG 改用 `hdiutil`（不依赖 `create-dmg`）。实测常驻 `phys_footprint` ≈ 15MB（低于 ~30MB 目标）。
 - 菜单栏由 `MenuBarExtra` 改为 `NSStatusItem` + `NSPopover`：因 `MenuBarExtra` 的 label 背景被系统忽略，无法给进行中的倒计时上橙/绿底色；改自绘 `NSImage` 后可正确渲染底色，一眼区分工作/休息。同步更新 `PROJECT.md` 第二节技术方案与第五节交互。
+
+### 修复
+- 休息浮窗尺寸被压成竖条、文字截断：为内容设固定 360×200 尺寸并 `setContentSize`，避免 `NSHostingController` 按 fitting size 反向压缩窗口。
+- 休息浮窗按钮主次不分、`开始休息` 在非活动窗口下被渲染成灰色：改用显式填充的自定义按钮样式（主=蓝底白字、次=浅灰），不再依赖系统 `borderedProminent` 的活动态；窗口标题改为 `Recess`、正文大标题保留 `该休息了`。同步更新 `PROJECT.md` 第五节。

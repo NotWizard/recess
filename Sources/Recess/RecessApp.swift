@@ -32,5 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = AppController()
         self.controller = controller
         self.statusItem = StatusItemController(controller: controller)
+        // 调试：--restdemo 启动即弹休息浮窗，便于肉眼核对尺寸。
+        if CommandLine.arguments.contains("--restdemo") {
+            controller.presentRestWindow()
+        }
     }
 }
