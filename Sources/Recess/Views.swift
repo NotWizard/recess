@@ -68,7 +68,7 @@ struct MenuContentView: View {
         switch action {
         case .startWork:  controller.startWork()
         case .endWork:    controller.endWork()
-        case .startBreak: controller.presentRestWindow()
+        case .startBreak: controller.startBreak()
         case .skipBreak:  controller.skipBreak()
         }
         // 收起面板：图标宽度随状态变化会导致 popover 箭头错位，点完即关最稳且交互自然。

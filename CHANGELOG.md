@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-13
+
+### 变更
+- 关闭休息浮窗后从下拉面板点「开始休息」不再重新弹出浮窗：`MenuContentView.perform(.startBreak)` 由 `presentRestWindow()` 改为 `startBreak()`，直接进入休息计时。工作段自然完成时自动弹浮窗的行为不变。
+
 ## [0.1.1] - 2026-07-12
 
 ### 修复
