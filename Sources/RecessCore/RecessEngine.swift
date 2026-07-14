@@ -85,6 +85,7 @@ public final class RecessEngine: ObservableObject {
 
     /// GUI 每秒调用（也可在唤醒时补调）。按墙上时钟结算是否到点。
     public func tick() {
+        rolloverIfNeeded()
         guard endDate != nil else { return }
         if now() >= endDate! {
             switch phase {

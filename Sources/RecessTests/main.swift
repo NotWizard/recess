@@ -153,6 +153,16 @@ test("same-day restart keeps count") {
     eq(e2.todayCount, 1, "same-day keeps 1")
 }
 
+test("resident engine resets count on day rollover via tick") {
+    let clk = Clock(Date(timeIntervalSince1970: 1_700_000_000))
+    let (e, _, _) = makeEngine(clock: clk)
+    e.startWork(); fastForward(e, clk)
+    eq(e.todayCount, 1, "count 1 before rollover")
+    clk.advance(24 * 3600)
+    e.tick()  // 常驻引擎不重启，靠 tick 触发跨天归零
+    eq(e.todayCount, 0, "resident rollover via tick zeroes count")
+}
+
 // MARK: 进行中计时不持久化
 test("in-progress timer not persisted") {
     let clk = Clock(Date(timeIntervalSince1970: 1_700_000_000))

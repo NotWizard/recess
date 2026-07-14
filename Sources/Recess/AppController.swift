@@ -4,7 +4,7 @@ import UserNotifications
 import RecessCore
 
 /// 应用控制器：桥接纯引擎与 AppKit/SwiftUI。持有计时器、结束音效、通知、居中休息浮窗与设置窗。
-/// 计时器仅在非空闲阶段运行——空闲即停，减少无谓唤醒以压低占用。
+/// 计时器：进行中每秒结算倒计时；空闲时降至 60 秒低频心跳，驱动跨天归零检查。
 final class AppController: ObservableObject {
     let engine: RecessEngine
     private var timer: Timer?
@@ -26,6 +26,7 @@ final class AppController: ObservableObject {
         self.engine = engine
         engine.onEvent = { [weak self] event in self?.handle(event) }
         requestNotificationAuthorization()
+        syncTimer()
     }
 
     // MARK: 工作控制（菜单栏下拉）
@@ -87,22 +88,20 @@ final class AppController: ObservableObject {
 
     private func syncTimer() {
         let active = engine.phase != .idle
-        if active && timer == nil {
-            let t = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
-                self?.onTick()
-            }
-            // .common 模式：菜单交互/窗口拖动时计时不暂停。
-            RunLoop.main.add(t, forMode: .common)
-            timer = t
-        } else if !active {
-            timer?.invalidate()
-            timer = nil
+        let interval: TimeInterval = active ? 1.0 : 60.0
+        if let existing = timer, existing.timeInterval == interval { return }
+        timer?.invalidate()
+        let t = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+            self?.onTick()
         }
+        // .common 模式：菜单交互/窗口拖动时计时不暂停。
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
     }
 
     private func onTick() {
         engine.tick()
-        syncTimer() // 阶段自然结束后回到空闲会在此停表。
+        syncTimer() // 阶段自然结束后回到空闲会在此降为低频心跳。
     }
 
     // MARK: 事件

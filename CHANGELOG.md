@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-07-14
+
+### 修复
+- App 常驻运行跨天后今日番茄数未归零：根因是 `rolloverIfNeeded()` 仅在 init/startWork/completeWork 调用，空闲跨天无触发路径；`tick()` 在空闲时直接返回、AppController 空闲时停表。现 `tick()` 开头先做 `rolloverIfNeeded()`，AppController 空闲时改为 60 秒低频心跳驱动跨天检查，init 启动即建 timer。新增常驻引擎跨天归零回归用例。
+
 ## [0.1.2] - 2026-07-13
 
 ### 变更
