@@ -91,7 +91,6 @@ struct ProgressRing: View {
                 .trim(from: 0, to: progress)
                 .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.25), value: progress)
             if let countdown {
                 Text(countdown).font(.system(size: 28, weight: .bold)).monospacedDigit()
             } else {

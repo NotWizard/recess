@@ -8,6 +8,7 @@
 
 ### 修复
 - App 常驻运行跨天后今日番茄数未归零：根因是 `rolloverIfNeeded()` 仅在 init/startWork/completeWork 调用，空闲跨天无触发路径；`tick()` 在空闲时直接返回、AppController 空闲时停表。现 `tick()` 开头先做 `rolloverIfNeeded()`，AppController 空闲时改为 60 秒低频心跳驱动跨天检查，init 启动即建 timer。新增常驻引擎跨天归零回归用例。
+- 空闲态 CPU 持续 4-10%：根因是 `ProgressRing` 的隐式 `.animation(.easeInOut(duration:), value: progress)` 让 SwiftUI 在 popover 关闭、进度环不可见时仍按 60fps 空转渲染循环。去掉该隐式动画修饰符，空闲态 CPU 降至接近 0；进度环每秒跳变而非平滑过渡，但仅在 popover 打开时可见且为细描边，肉眼无感。
 
 ## [0.1.2] - 2026-07-13
 
