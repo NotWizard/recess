@@ -5,10 +5,12 @@ import RecessCore
 struct MenuContentView: View {
     @ObservedObject var controller: AppController
     @ObservedObject var engine: RecessEngine
+    @ObservedObject var updateChecker: UpdateChecker
 
     init(controller: AppController) {
         self.controller = controller
         self.engine = controller.engine
+        self._updateChecker = ObservedObject(wrappedValue: controller.updateChecker)
     }
 
     private var action: MenuUI.PrimaryAction {
@@ -43,6 +45,15 @@ struct MenuContentView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 10) {
+                Button(updateButtonTitle) {
+                    if updateChecker.latestVersion != nil {
+                        controller.downloadUpdate()
+                    } else {
+                        controller.checkForUpdates()
+                    }
+                }
+                .disabled(updateChecker.isDownloading)
+                .frame(maxWidth: .infinity)
                 Button("设置") { controller.openSettings() }
                     .frame(maxWidth: .infinity)
                 Button("退出") { controller.quit() }
@@ -62,6 +73,13 @@ struct MenuContentView: View {
         case .work: return .orange
         case .rest: return .green
         }
+    }
+
+    /// 更新按钮文案：有新版→"立即更新 vX.X.X"，下载中→"下载中…"，否则→"检查更新"。
+    private var updateButtonTitle: String {
+        if updateChecker.isDownloading { return "下载中…" }
+        if let v = updateChecker.latestVersion { return "立即更新 v\(v)" }
+        return "检查更新"
     }
 
     private func perform(_ action: MenuUI.PrimaryAction) {

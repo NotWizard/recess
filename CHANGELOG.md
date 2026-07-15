@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-07-15
+
+### 新增
+- 更新检测：App 启动时静默查询 GitHub Releases API 比较版本；下拉面板「设置/退出」行新增「检查更新」按钮，检测到新版后按钮文案变为「立即更新 vX.X.X」，点击下载最新 Release 的 DMG 并挂载，弹出 Finder 并排拖拽窗口，安装仍由用户手动完成。不做 in-place 替换，不引入 Sparkle，不触碰 bundle/quarantine/重启。详见 ADR-0001。
+- 领域文档：新增 `CONTEXT.md` 词汇表与 `docs/adr/0001-update-detection-strategy.md` 决策记录。
+- GUI 自检新增版本比较断言 6 项（53 项全过）。
+
 ## [0.1.3] - 2026-07-14
 
 ### 修复

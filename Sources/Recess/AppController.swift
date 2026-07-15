@@ -7,6 +7,7 @@ import RecessCore
 /// 计时器：进行中每秒结算倒计时；空闲时降至 60 秒低频心跳，驱动跨天归零检查。
 final class AppController: ObservableObject {
     let engine: RecessEngine
+    let updateChecker = UpdateChecker()
     private var timer: Timer?
     private var restWC: RestWindowController?
     private var settingsWindow: NSWindow?
@@ -27,6 +28,8 @@ final class AppController: ObservableObject {
         engine.onEvent = { [weak self] event in self?.handle(event) }
         requestNotificationAuthorization()
         syncTimer()
+        // 启动时静默检查更新（ADR-0001）。
+        updateChecker.checkLatest(currentVersion: AppController.appVersion)
     }
 
     // MARK: 工作控制（菜单栏下拉）
@@ -82,6 +85,23 @@ final class AppController: ObservableObject {
 
     func quit() {
         NSApp.terminate(nil)
+    }
+
+    // MARK: 更新检测（ADR-0001）
+
+    /// 当前 App 版本号，取自 Info.plist CFBundleShortVersionString。
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+    }
+
+    /// 手动触发一次检查（设置页"检查更新"按钮）。
+    func checkForUpdates() {
+        updateChecker.checkLatest(currentVersion: AppController.appVersion)
+    }
+
+    /// 下载最新版 DMG 并挂载（有新版时"立即更新"按钮）。
+    func downloadUpdate() {
+        updateChecker.downloadAndOpen()
     }
 
     // MARK: 计时器

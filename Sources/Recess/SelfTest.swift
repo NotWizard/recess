@@ -118,6 +118,13 @@ enum SelfTest {
         let nBreak = AppController.notificationContent(for: .breakCompleted)
         check(nBreak.title == "休息结束" && !nBreak.body.isEmpty, "休息结束通知文案")
 
+        // 9) 更新检测：版本比较纯逻辑（ADR-0001）。
+        check(UpdateChecker.isNewer("0.1.4", than: "0.1.3"), "新版应更旧版新")
+        check(!UpdateChecker.isNewer("0.1.3", than: "0.1.3"), "相同版本非更新")
+        check(!UpdateChecker.isNewer("0.1.2", than: "0.1.3"), "旧版非更新")
+        check(UpdateChecker.isNewer("0.2.0", than: "0.1.9"), "次版本位升级")
+        check(UpdateChecker.isNewer("1.0.0", than: "0.9.9"), "主版本位升级")
+        check(UpdateChecker.isNewer("0.1.3", than: "0"), "无版本基线视为更新")
         print("---")
         print("passed: \(passed), failed: \(failures)")
         if failures > 0 { exit(1) }
