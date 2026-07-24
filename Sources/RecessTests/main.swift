@@ -163,6 +163,27 @@ test("resident engine resets count on day rollover via tick") {
     eq(e.todayCount, 0, "resident rollover via tick zeroes count")
 }
 
+test("resident engine resets long-break cycle on day rollover") {
+    let clk = Clock(Date(timeIntervalSince1970: 1_700_000_000))
+    let (e, _, _) = makeEngine(clock: clk)
+    for _ in 0..<2 {
+        e.startWork(); fastForward(e, clk)
+        e.skipPendingBreak()
+    }
+    eq(e.completedWorkSegments, 2, "cycle 2 before rollover")
+    clk.advance(24 * 3600)
+    e.tick()  // 常驻跨天：长休轮次也应归零，昨日进度不得带入今天
+    eq(e.completedWorkSegments, 0, "cycle reset on new day")
+    var rests: [RestKind] = []
+    e.onEvent = { if case let .workCompleted(k) = $0 { rests.append(k) } }
+    for _ in 0..<2 {
+        e.startWork(); fastForward(e, clk)
+        e.skipPendingBreak()
+    }
+    eq(rests, [.short, .short], "today's 2nd is short, not long")
+    eq(e.completedWorkSegments, 2, "today counts from scratch")
+}
+
 // MARK: 进行中计时不持久化
 test("in-progress timer not persisted") {
     let clk = Clock(Date(timeIntervalSince1970: 1_700_000_000))

@@ -157,12 +157,13 @@ public final class RecessEngine: ObservableObject {
         defaults.set(now(), forKey: Key.countDate)
     }
 
-    /// 跨天自动归零：存储日期与今天不同日 → 今日计数清零并写入今天。
+    /// 跨天自动归零：存储日期与今天不同日 → 今日计数与长休轮次计数清零并写入今天。
     private func rolloverIfNeeded() {
         let today = now()
         if let stored = defaults.object(forKey: Key.countDate) as? Date {
             if !calendar.isDate(stored, inSameDayAs: today) {
                 todayCount = 0
+                completedWorkSegments = 0
                 defaults.set(0, forKey: Key.todayCount)
                 defaults.set(today, forKey: Key.countDate)
             }
